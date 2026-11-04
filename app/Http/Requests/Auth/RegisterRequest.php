@@ -12,7 +12,7 @@ class RegisterRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,21 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            "lastname" => [[
+                "required",
+            ]],
+            "firstname" => [
+                "required",
+            ],
+            "email" => [
+                "required",
+                "email",
+                "unique:users, unique"
+            ],
+            "password" => [
+                "required",
+                "min:8"
+            ]
         ];
     }
 }
