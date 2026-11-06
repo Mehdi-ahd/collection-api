@@ -5,11 +5,12 @@ use App\Http\Controllers\Auth\RegisterController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::name('auth')->group(function () {
+    Route::post('/login', [LoginController::class, 'login'])->name('login');
+    Route::post('/register', [RegisterController::class, 'register'])->name('register');
+});
 
-Route::name('auth')->group(function() {
-    Route::post("/login", [LoginController::class, "login"])->name("login");
-    Route::post("/register", [RegisterController::class, "register"])->name("register");
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', fn (Request $request) => $request->user());
+    Route::post('/logout', [LoginController::class, 'logout'])->name('auth.logout');
 });
