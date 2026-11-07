@@ -11,35 +11,36 @@ use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
-    function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $credentials = $request->validated(); // données valides garantie
+        $credentials = $request->validated();
 
-        if (! Auth::attempt($credentials)) {   // ← seul vrai test d'échec ici : l'authentification
+        if (! Auth::attempt($credentials)) {
             return response()->json([
-                "message" => "Identifiants invalides",
-                "data" => [],
+                'message' => 'Identifiants invalides',
+                'data' => [],
             ], 401);
         }
 
+        /** @var User $user */
         $user = Auth::user();
 
-        /** @var User $user */
         return response()->json([
-            "message" => "Authentification réussie",
-            "data" => [
-                "user" => $user,
-                "token" => $user->createToken("spa")->plainTextToken,
+            'message' => 'Authentification réussie',
+            'data' => [
+                'user' => $user,
+                'token' => $user->createToken('spa')->plainTextToken,
             ],
         ]);
     }
 
-    function logout(Request $request) {
-        Auth::logout();
+    public function logout(Request $request)
+    {
         $request->user()->currentAccessToken()->delete();
+
         return response()->json([
-            "message" => "Déconnexion réussie",
-            "data" => []
+            'message' => 'Déconnexion réussie',
+            'data' => [],
         ]);
     }
 }
