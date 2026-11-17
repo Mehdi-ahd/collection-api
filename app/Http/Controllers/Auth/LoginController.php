@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
+    /**
+     * Authentifier un utilisateur et générer son token API.
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->validated();
@@ -34,7 +37,10 @@ class LoginController extends Controller
         ]);
     }
 
-    public function logout(Request $request)
+    /**
+     * Révoquer le token utilisé pour la requête en cours.
+     */
+    public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
