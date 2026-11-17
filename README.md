@@ -1,58 +1,122 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Collection API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST du **Gestionnaire de Collection** : gère les collections d'objets (pièces, figurines, timbres…) de leurs propriétaires, avec une authentification par token.
 
-## About Laravel
+> Application frontend associée : [collection-web](https://github.com/Mehdi-ahd/collection-web)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Élément | Choix |
+| --- | --- |
+| Framework | Laravel 13 (PHP 8.4) |
+| Base de données | SQLite (dev) / MySQL ou MariaDB (prod possible) |
+| Authentification | Sanctum — tokens *opaques* (Bearer) |
+| Tests | PHPUnit |
+| Style de code | Laravel Pint |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Démarrage rapide
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan db:seed   # jeu de démonstration
+php artisan serve     # http://localhost:8000
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Compte de démonstration
 
-## Contributing
+Créé par le seeder :
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Champ | Valeur |
+| --- | --- |
+| Email | `demo@collection.dev` |
+| Mot de passe | `password1234` |
 
-## Code of Conduct
+Avec une collection « Collection mix » contenant 3 objets (images SVG encodées en data URI, exactement comme l'upload base64 du frontend).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Variables d'environnement
 
-## Security Vulnerabilities
+| Variable | Rôle | Défaut |
+| --- | --- | --- |
+| `DB_CONNECTION` | SQLite en dev (`sqlite`) | `sqlite` |
+| `CORS_ALLOWED_ORIGINS` | Origines autorisées à appeler l'API (séparées par des virgules) | `http://localhost:4200` |
+| `APP_URL` | URL racine de l'API | `http://localhost:8000` |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Endpoints
 
-## License
+### Publics
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Méthode | Route | Description | Réponse |
+| --- | --- | --- | --- |
+| `POST` | `/api/register` | Créer un compte (ne connecte pas) | `201` — `{message, data: {user}}` |
+| `POST` | `/api/login` | Authentification, génère le token | `200` — `{message, data: {user, token}}` |
+
+### Protégés (header `Authorization: Bearer <token>`)
+
+| Méthode | Route | Description | Réponse |
+| --- | --- | --- | --- |
+| `GET` | `/api/user` | Utilisateur connecté (restauration de session) | `200` |
+| `GET` | `/api/collection` | Collections de l'utilisateur (+ items) | `200` |
+| `GET` | `/api/collection/{id}` | Détail d'une collection (+ items) | `200` / `404` |
+| `POST` | `/api/collection` | Créer une collection | `201` |
+| `PUT` | `/api/collection/{id}` | Modifier une collection | `200` |
+| `DELETE` | `/api/collection/{id}` | Supprimer une collection (items inclus) | `200` |
+| `POST` | `/api/collection/{id}/item` | Créer un objet dans une collection | `201` |
+| `GET` | `/api/item/{id}` | Détail d'un objet | `200` / `404` |
+| `PUT` | `/api/item/{id}` | Modifier un objet | `200` |
+| `DELETE` | `/api/item/{id}` | Supprimer un objet | `200` |
+| `POST` | `/api/logout` | Révoquer le token courant | `200` |
+
+## Contrat de réponse
+
+Toute réponse suit le même contrat :
+
+```json
+{
+  "message": "…",
+  "data": { "…": "…" }
+}
+```
+
+- Succès : code 2xx + `data` rempli (ou `[]`).
+- Erreur de validation : code `422` + `errors` détaillées par champ.
+- Non authentifié : `401` (JSON, même sans header `Accept`).
+- Ressource inexistante **ou appartenant à un autre utilisateur** : `404` (pas de fuite d'information).
+
+## Schéma de données
+
+```
+users ──1,n──> collections ──1,n──> collection_items
+```
+
+- `users` : `lastname`, `firstname`, `email` (unique), `password` (hash).
+- `collections` : `user_id`, `title`.
+- `collection_items` : `collection_id`, `name`, `description`, `image` (TEXT — data URI base64), `rarity` (Common / Uncommon / Rare / Legendary — enum `CollectionRarity`), `price` (entier ≥ 0).
+
+## Tests
+
+```bash
+php artisan test --compact
+```
+
+Couverture :
+- `AuthTest` — `GET /api/user` avec/sans token ;
+- `CollectionsTest` — CRUD collections et objets, isolation entre utilisateurs, validation (rareté inconnue, prix négatif, titre vide).
+
+## Découpe du code
+
+```
+app/
+├── Enums/CollectionRarity.php           # raretés autorisées (validation + seeds)
+├── Http/Controllers/Auth/               # login, register, logout
+├── Http/Controllers/CollectionController.php
+├── Http/Controllers/CollectionItemController.php
+├── Http/Requests/                       # validation par requête (FormRequest)
+├── Models/                              # User, Collection, CollectionItem
+database/
+├── migrations/                          # schéma (incl. image TEXT nullable)
+├── factories/                           # User, Collection, CollectionItem
+└── seeders/DatabaseSeeder.php           # données de démo
+```
